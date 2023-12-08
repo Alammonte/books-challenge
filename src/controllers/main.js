@@ -1,13 +1,6 @@
 const bcryptjs = require("bcryptjs");
 const db = require("../database/models");
-
-const validateEmail = (email) => {
-  return String(email)
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    );
-};
+const {validationResult} = require("express-validator")
 
 const mainController = {
   home: (req, res) => {
@@ -79,6 +72,13 @@ const mainController = {
     res.render("register", {message: null});
   },
   processRegister: async (req, res) => {
+
+    const results = validationResult(req)
+
+    if(!results.isEmpty()){
+      return res.render("register", {message: results.array()[0].msg});
+    }
+
     const {name, email, country, password, category} = req.body;
 
     const userExists = await db.User.findOne({
@@ -115,13 +115,13 @@ const mainController = {
     res.render("login", { message: null });
   },
   processLogin: async (req, res) => {
-    const { email, password } = req.body;
+    const results = validationResult(req)
 
-    if(!validateEmail(email)) {
-      return res.render("login", {
-        message: "El correo es incorrecto.",
-      });
+    if(!results.isEmpty()){
+      return res.render("login", {message: results.array()[0].msg});
     }
+
+    const { email, password } = req.body;
 
     const { dataValues } = await db.User.findOne({
       where: {

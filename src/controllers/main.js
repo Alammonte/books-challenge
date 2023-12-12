@@ -41,13 +41,21 @@ const mainController = {
     res.render("search", { books });
   },
   deleteBook: async (req, res) => {
-    const { id } = req.params;
+    const {id} = req.params;
 
-    await db.Book.destroy({
-      where: {
-        id
-      }
-    })
+  try {
+    const bookToDelete = await db.Book.findByPk(id, { include: [{association:"authors"}] });
+
+    if (!bookToDelete) {
+      return res.status(404).json({ error: 'Libro no encontrado' });
+    }
+    await bookToDelete.setAuthors([]);
+    await bookToDelete.destroy();
+
+    return res.redirect("/");
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al eliminar el libro', details: error.message });
+  } 
 
     return res.redirect("/")
   },
